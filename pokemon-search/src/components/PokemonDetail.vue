@@ -68,7 +68,7 @@
         <div class="bg-gray-100 p-4 rounded-lg mt-4">
           <h2 class="text-2xl font-bold mb-2">Evolutions</h2>
           <div v-if="evolutions.length" class="flex flex-wrap justify-center space-x-2">
-            <div v-for="evolution in evolutions" :key="evolution.name" class="text-center">
+            <div v-for="evolution in evolutions" :key="evolution.name" class="text-center cursor-pointer" @click="selectEvolution(evolution.name)">
               <img :src="evolution.image" :alt="evolution.name" class="mb-2 w-24 h-24 object-contain" />
               <p class="capitalize">{{ evolution.name }}</p>
             </div>
@@ -153,6 +153,12 @@ export default defineComponent({
       }
     };
 
+    // Function to select an evolution and fetch its details
+    const selectEvolution = (name: string) => {
+      console.log('Selecting Evolution:', name); // Log the selected evolution
+      fetchPokemonDetails(name);
+    };
+
     // Map to get the background color based on Pokémon type
     const typeColorMap: Record<string, string> = {
       grass: '#78C850',
@@ -234,7 +240,7 @@ export default defineComponent({
       }
     });
 
-    return { pokemon, isLoading, evolutions, typeColor, typeClass };
+    return { pokemon, isLoading, evolutions, typeColor, typeClass, selectEvolution };
   }
 });
 </script>
