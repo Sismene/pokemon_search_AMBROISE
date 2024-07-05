@@ -64,6 +64,17 @@
             <img v-if="pokemon.sprites.back_shiny" :src="pokemon.sprites.back_shiny" alt="Back shiny" class="mb-4 w-24 h-24 object-contain" />
           </div>
         </div>
+        <!-- Evolution Section -->
+        <div class="bg-gray-100 p-4 rounded-lg mt-4">
+          <h2 class="text-2xl font-bold mb-2">Evolutions</h2>
+          <div v-if="evolutions.length" class="flex flex-wrap justify-center space-x-2">
+            <div v-for="evolution in evolutions" :key="evolution.name" class="text-center">
+              <img :src="evolution.image" :alt="evolution.name" class="mb-2 w-24 h-24 object-contain" />
+              <p class="capitalize">{{ evolution.name }}</p>
+            </div>
+          </div>
+          <p v-else>No evolutions available.</p>
+        </div>
       </div>
     </div>
     <div v-else class="text-center p-4">
@@ -87,11 +98,13 @@ export default defineComponent({
     // State variables
     const pokemon = ref<any>(null);
     const isLoading = ref<boolean>(false);
+    const evolutions = ref<Array<{ name: string, image: string }>>([]);
 
     // Function to fetch Pokémon details from the API
     const fetchPokemonDetails = async (name: string) => {
       isLoading.value = true;
       pokemon.value = null;
+      evolutions.value = [];
 
       try {
         const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${name}`);
@@ -102,10 +115,41 @@ export default defineComponent({
         console.log('Fetched data:', data); // Log fetched data
         pokemon.value = data;
         console.log('Pokemon value set to:', pokemon.value); // Log the pokemon value
+
+        // Fetch the evolution chain
+        await fetchEvolutionChain(data.species.url);
       } catch (error) {
         console.error('Error fetching Pokémon details:', error);
       } finally {
         isLoading.value = false;
+      }
+    };
+
+    // Function to fetch evolution chain
+    const fetchEvolutionChain = async (speciesUrl: string) => {
+      try {
+        const speciesResponse = await fetch(speciesUrl);
+        const speciesData = await speciesResponse.json();
+        const evolutionResponse = await fetch(speciesData.evolution_chain.url);
+        const evolutionData = await evolutionResponse.json();
+
+        const chain = evolutionData.chain;
+
+        // Traverse the evolution chain and collect names and images
+        let current = chain;
+        while (current) {
+          const evolutionName = current.species.name;
+          const evolutionImageResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${evolutionName}`);
+          const evolutionImageData = await evolutionImageResponse.json();
+          evolutions.value.push({
+            name: evolutionName,
+            image: evolutionImageData.sprites.front_default
+          });
+
+          current = current.evolves_to[0];
+        }
+      } catch (error) {
+        console.error('Error fetching evolution chain:', error);
       }
     };
 
@@ -190,7 +234,7 @@ export default defineComponent({
       }
     });
 
-    return { pokemon, isLoading, typeColor, typeClass };
+    return { pokemon, isLoading, evolutions, typeColor, typeClass };
   }
 });
 </script>
